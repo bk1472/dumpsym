@@ -16,7 +16,7 @@ $(TARGET): $(OBJS)
 	@$(CC) -o $@ $^
 
 %.o : %.c
-	@$(CC) -c -o $@ $<
+	@$(CC) -Wno-format-security -c -o $@ $<
 
 clean:
 	@$(RM) $(OBJS)
