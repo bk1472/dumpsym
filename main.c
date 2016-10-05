@@ -16,7 +16,7 @@
 #include	"process.h"
 
 #define OPTSTR		"h?o:v:d:"
-#define OPTMSG		"[h?ov]"
+#define OPTMSG		"[h?ovd]"
 
 static char		*tool_name   = NULL;
 ulong_t			verbose      = 0;
@@ -147,7 +147,7 @@ static void usage (void)
 "   [-?h]      Print this help message\n"
 "   [-o name]  Set output file name\n"
 "   [-v]       Verbose display - 0 : no display 1 : process area 2 : addr2line area\n"
-"   [-v]       debug   display - 0x10 : process level (1)  0x20 : process level (2)\n"
+"   [-d]       debug   display - 0x10 : process level (1)  0x20 : process level (2)\n"
 "                                0x01 : addr2line levle(1) 0x02 : addr2line level (2)\n"
 "Note:\n"
 "   - Revision History -\n"
