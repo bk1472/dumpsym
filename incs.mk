@@ -15,5 +15,7 @@ CFLAGS		+= -O2
 CFLAGS		+= -I$(INC_DIR) -I.
 CFLAGS		+= -DUNIX
 CFLAGS		+= -DMKSYM
+CFLAGS		+= -Wno-format
+CFLAGS		+= -Wno-unused-result
 
 all : $(SCRPT_DIR)/ccdv
