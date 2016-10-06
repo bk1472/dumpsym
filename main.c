@@ -15,14 +15,15 @@
 #include	"util.h"
 #include	"process.h"
 
-#define OPTSTR		"h?o:v:d:"
-#define OPTMSG		"[h?ovd]"
+#define OPTSTR		"h?o:v:d:a:"
+#define OPTMSG		"[h?ovda]"
 
 static char		*tool_name   = NULL;
 ulong_t			verbose      = 0;
 ulong_t			debug_level  = 0;
 ulong_t			debug_lvl_pc = 0;
 ulong_t			debug_lvl_ad = 0;
+ulong_t			analyze      = 0;
 
 static void		usage			(void);
 
@@ -61,6 +62,9 @@ int main (int argc, char **argv)
 				debug_lvl_pc = debug_level >> 4;
 				debug_lvl_ad = debug_level & 0xf;
 				break;
+			case 'a':
+				analyze = 1;
+				break;
 			case 'o':
 				dst_name = strdup(optarg);
 				break;
@@ -91,6 +95,7 @@ int main (int argc, char **argv)
 			||!strcasecmp(cp, ".elf")
 			||!strcasecmp(cp, ".biz")
 			||!strcasecmp(cp, ".axf")
+			||!strcasecmp(cp, ".dat")
 		   )
 		{
 			*cp++ = '\0';
@@ -98,9 +103,12 @@ int main (int argc, char **argv)
 		}
 	}
 
-	sym_name = (char *)malloc(len + 64);
-	sprintf(sym_name, "%s.sym", dst_name);
-	unlink(sym_name);
+	if (0 == analyze)
+	{
+		sym_name = (char *)malloc(len + 64);
+		sprintf(sym_name, "%s.sym", dst_name);
+		unlink(sym_name);
+	}
 
 	src_name = argv[optind];
 
@@ -118,8 +126,13 @@ int main (int argc, char **argv)
 		goto flush_and_exit;
 	}
 
-	if ((ofp = fopen (sym_name, "wb")) == NULL)
-		ofp = stdout;
+	if (NULL != sym_name)
+	{
+		if ((ofp = fopen (sym_name, "wb")) == NULL)
+			ofp = stdout;
+	}
+	else
+		ofp = NULL;
 
 	PRINT("=======================================================================\n");
 	img_size = process(ifp, ofp);
@@ -158,7 +171,8 @@ static void usage (void)
 "   [-o name]  Set output file name\n"
 "   [-v]       Verbose display - 0 : no display 1 : process area 2 : addr2line area\n"
 "   [-d]       debug   display - 0x10 : process level (1)  0x20 : process level (2)\n"
-"                                0x01 : addr2line levle(1) 0x02 : addr2line level (2)\n"
+"                                0x01 : addr2line level(1) 0x02 : addr2line level (2)\n"
+"   [-a]       Just Analyze ELF file (do not make symbol file at any conditions\n"
 "Note:\n"
 "   - Revision History -\n"
 "%s",

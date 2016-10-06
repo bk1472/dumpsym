@@ -558,35 +558,36 @@ ulong_t process (FILE *ifp, FILE *ofp)
 
 	data_sz = (sizeof(int)*(5 + 3 * nTxtSyms) + nSbSize);
 	PRINT("Exporting %d(0x%06x) byte symbol table\n", data_sz, data_sz);
-
-	tmp = SYM_MAGIC;  swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
-	tmp = nBssSz;     swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
-	tmp = data_sz-20; swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
-	tmp = nTxtSyms;   swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
-	tmp = nSbSize;    swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
-
-	/* Write index table with addresses and ptr to name */
-	for (tmp = 0; tmp < nTxtSyms; tmp++)
+	if (ofp)
 	{
-		if(sym_tabs[tmp][1] == 0)
+		tmp = SYM_MAGIC;  swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
+		tmp = nBssSz;     swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
+		tmp = data_sz-20; swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
+		tmp = nTxtSyms;   swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
+		tmp = nSbSize;    swap_long(&tmp); fwrite(&tmp, 1, sizeof(int), ofp);
+
+		/* Write index table with addresses and ptr to name */
+		for (tmp = 0; tmp < nTxtSyms; tmp++)
 		{
-			if(tmp <(nTxtSyms-1))
-				sym_tabs[tmp][1] = sym_tabs[tmp+1][0];
+			if(sym_tabs[tmp][1] == 0)
+			{
+				if(tmp <(nTxtSyms-1))
+					sym_tabs[tmp][1] = sym_tabs[tmp+1][0];
+			}
+			else
+			{
+				sym_tabs[tmp][1] += sym_tabs[tmp][0];
+			}
+			swap_long(&sym_tabs[tmp][0]);
+			swap_long(&sym_tabs[tmp][1]);
+			swap_long(&sym_tabs[tmp][2]);
 		}
-		else
-		{
-			sym_tabs[tmp][1] += sym_tabs[tmp][0];
-		}
-		swap_long(&sym_tabs[tmp][0]);
-		swap_long(&sym_tabs[tmp][1]);
-		swap_long(&sym_tabs[tmp][2]);
+
+		fwrite(&sym_tabs[0][0], sizeof(int), 3 * nTxtSyms, ofp);
+
+		/* Write symbol strings */
+		fwrite(&pSym_buff[0], 1, nSbSize, ofp);
 	}
-
-	fwrite(&sym_tabs[0][0], sizeof(int), 3 * nTxtSyms, ofp);
-
-	/* Write symbol strings */
-	fwrite(&pSym_buff[0], 1, nSbSize, ofp);
-
 _finalize_resource:
 	munmap(pBinBuff, MAX_BIN_SIZE);
 	free(pPhdr);
