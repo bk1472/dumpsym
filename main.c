@@ -38,7 +38,6 @@ int main (int argc, char **argv)
 	int			c, len;
 	ulong_t		img_size  = 0;
 	int			arg_list  = 0;
-	int			i;
 
 	if ( argc < 2 )
 		exit(-1);
