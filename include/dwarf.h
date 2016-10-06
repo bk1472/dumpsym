@@ -38,8 +38,8 @@
 /* This file is shared between GCC and GDB, and should not contain
    prototypes.  */
 
-#ifndef _ELF_DWARF2_H
-#define _ELF_DWARF2_H
+#ifndef _ELF_DWARF_H
+#define _ELF_DWARF_H
 
 /* Structure found in the .debug_line section.  */
 typedef struct
@@ -227,7 +227,11 @@ enum dwarf_form
     DW_FORM_ref4 = 0x13,
     DW_FORM_ref8 = 0x14,
     DW_FORM_ref_udata = 0x15,
-    DW_FORM_indirect = 0x16
+    DW_FORM_indirect = 0x16,
+	DW_FORM_sec_offset = 0x17,
+	DW_FORM_exprloc = 0x18,
+	DW_FORM_flag_present = 0x19,
+	DW_FORM_ref_sig8 = 0x20
   };
 
 /* Attribute names and codes.  */
@@ -718,4 +722,4 @@ enum dwarf_macinfo_record_type
 
 #define DW_EH_PE_indirect	0x80
 
-#endif /* _ELF_DWARF2_H */
+#endif /* _ELF_DWARF_H */

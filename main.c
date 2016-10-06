@@ -38,6 +38,7 @@ int main (int argc, char **argv)
 	int			c, len;
 	ulong_t		img_size  = 0;
 	int			arg_list  = 0;
+	int			i;
 
 	if ( argc < 2 )
 		exit(-1);
@@ -82,12 +83,22 @@ int main (int argc, char **argv)
 	if (dst_name == NULL)
 		dst_name = strdup(argv[optind]);
 
-	cp = strrchr(dst_name, '.');
+	len = strlen(dst_name);
 
-	if (cp != NULL)
-		*cp = '\0';
+	if ((cp  = strrchr(dst_name, '.')) != NULL)
+	{
+		if (
+			  !strcasecmp(cp, ".bin")
+			||!strcasecmp(cp, ".elf")
+			||!strcasecmp(cp, ".biz")
+			||!strcasecmp(cp, ".axf")
+		   )
+		{
+			*cp++ = '\0';
+			len = strlen(dst_name);
+		}
+	}
 
-	len      = strlen(dst_name);
 	sym_name = (char *)malloc(len + 64);
 	sprintf(sym_name, "%s.sym", dst_name);
 	unlink(sym_name);

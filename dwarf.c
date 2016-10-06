@@ -30,6 +30,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
+#include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
 #include "malloc.h"
@@ -86,12 +87,6 @@ struct comp_unit
 
   /* The offset into .debug_line of the line number table.  */
   unsigned long line_offset;
-
-  /* The end of the comp unit.  */
-  unsigned char *end_ptr;
-
-  /* DWARF format version for this unit - from unit header.  */
-  int version;
 
   /* Address size for this unit - from unit header.  */
   unsigned char addr_size;
@@ -402,16 +397,9 @@ read_attribute_value (struct attribute *attr,
 
   switch (form)
     {
+    case DW_FORM_addr:
       /* FIXME: DWARF3 draft says DW_FORM_ref_addr is offset_size.  */
     case DW_FORM_ref_addr:
-      if (unit->version == 3 || unit->version == 4)
-	{
-	  attr->u.val = read_4_bytes (info_ptr);
-	  info_ptr += unit->offset_size;
-	  break;
-	}
-      /* FALLTHROUGH */
-    case DW_FORM_addr:
       attr->u.val = read_address (unit, info_ptr);
       info_ptr += unit->addr_size;
       break;
@@ -448,6 +436,7 @@ read_attribute_value (struct attribute *attr,
       info_ptr += 2;
       break;
     case DW_FORM_data4:
+    case DW_FORM_sec_offset: /*DWARF4 new FORM direction : replace data4*/
       attr->u.val = read_4_bytes (info_ptr);
       info_ptr += 4;
       break;
@@ -526,7 +515,7 @@ read_attribute_value (struct attribute *attr,
       info_ptr = read_attribute_value (attr, form, unit, info_ptr);
       break;
     default:
-      fprintf(stdout, "Dwarf Error: Invalid or unhandled FORM value: %u\n", form);
+      fprintf(stdout, "Dwarf Error: Invalid or unhandled FORM value: %u(0x%x)\n", form, form);
     }
   return info_ptr;
 }
@@ -567,7 +556,6 @@ parse_comp_unit (unsigned char *info_ptr,
   struct abbrev_info *abbrev;
   struct attribute attr;
   size_t amt;
-  unsigned char *end_ptr = info_ptr + unit_length;
   unsigned long low_pc = 0;
   unsigned long high_pc = 0;
 
@@ -578,10 +566,10 @@ parse_comp_unit (unsigned char *info_ptr,
   addr_size = read_1_byte (info_ptr);
   info_ptr += 1;
 
-  if (version != 2 && version != 3)
+  if (version > 4)
     {
-      fprintf(stdout, "Dwarf Error: found dwarf version '%u', this reader only handles version 2, 3 information.\n", version);
-      return 0;
+      fprintf(stdout, "Dwarf Error: found dwarf version '%u', support version under 4 only\n", version);
+      exit(-1);
     }
 
   /* Read the abbrevs for this compilation unit into a table.  */
@@ -604,15 +592,12 @@ parse_comp_unit (unsigned char *info_ptr,
       return 0;
     }
 
-  amt  = sizeof (struct comp_unit);
+  amt = sizeof (struct comp_unit);
   unit = calloc (1, amt);
-
-  unit->version     = version;
-  unit->addr_size   = addr_size;
+  unit->addr_size = addr_size;
   unit->offset_size = offset_size;
-  unit->abbrevs     = abbrevs;
-  unit->end_ptr     = end_ptr;
-  unit->next_unit   = NULL;
+  unit->abbrevs = abbrevs;
+  unit->next_unit = NULL;
 
   for (i = 0; i < abbrev->num_attrs; ++i)
     {

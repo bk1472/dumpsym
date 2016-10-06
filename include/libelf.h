@@ -8,10 +8,11 @@
 #ifndef _LIBELF_H
 #define	_LIBELF_H
 
-#include <sys/types.h>
-#include <time.h>
+#pragma ident	"@(#)libelf.h	1.10	94/10/21 SMI"	/* SVr4.0 1.9	*/
 
-#include "sys/elf.h"
+#include <sys/types.h>
+#include <sys/elf.h>
+#include <time.h>
 
 #ifdef	__cplusplus
 extern "C" {
