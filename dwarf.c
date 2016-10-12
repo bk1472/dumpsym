@@ -147,12 +147,14 @@ read_1_signed_byte (unsigned char *buf)
 static unsigned int
 read_2_bytes (unsigned char *buf)
 {
+  extern short getShort(char *pSrc);
   return (getShort(buf));
 }
 
 static unsigned int
 read_4_bytes (unsigned char *buf)
 {
+  extern int getLong(char *pSrc);
   return (getLong(buf));
 }
 
@@ -659,8 +661,7 @@ parse_comp_unit (unsigned char *info_ptr,
 struct comp_unit cu_head;
 
 /* Parse all compile units */
-void
-parse_all_comp_units(void)
+void parse_all_comp_units(void)
 {
   unsigned char *info_ptr = pDebugInfo;
   unsigned long unit_length;
@@ -705,8 +706,7 @@ find_comp_dir(unsigned long line_offset)
 }
 
 /* Free all compilation units */
-void
-release_all_comp_units(void)
+void release_all_comp_units(void)
 {
   struct comp_unit *unit;
   int i;

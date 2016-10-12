@@ -6,6 +6,7 @@
 
 #include	"elf_func.h"
 #include	"def.h"
+#include	"dwarf.h"
 #include	"process.h"
 
 /**
@@ -435,6 +436,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 
 		if (pDebugLineHdr)
 		{
+			extern int searchLineInfo(char **, size_t *, unsigned int , char **);
 			extern char *pDebugStr, *pDebugInfo, *pDebugAbbr;
 			extern size_t debugStrSize, debugInfoSize, debugAbbrSize;
 

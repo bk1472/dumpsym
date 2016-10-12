@@ -10,7 +10,7 @@
 #include	<unistd.h>
 
 #include	"symtypes.h"
-#include	"libelf.h"
+#include	"elf_func.h"
 #include	"def.h"
 #include	"util.h"
 #include	"process.h"

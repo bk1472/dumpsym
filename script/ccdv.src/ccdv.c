@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <libgen.h>
 #include <errno.h>
 
 #define SETCOLOR_SUCCESS	(gANSIEscapes ? "\033\1331;32m" : "")

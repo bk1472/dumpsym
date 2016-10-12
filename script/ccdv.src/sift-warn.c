@@ -17,6 +17,7 @@
 #include	<unistd.h>
 #include	<sys/stat.h>
 #include	<sys/param.h>
+#include	<ctype.h>
 #include	<libgen.h>
 
 #define	MAX_SIFT_ITEMS	128

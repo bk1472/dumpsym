@@ -4,13 +4,6 @@
 
 #include	"elf_func.h"
 
-inline void 	swap_half		(void *vp);
-inline void 	swap_long		(void *vp);
-void			swap_ehdr		(Elf32_Ehdr *ehdr);
-void			swap_phdr		(Elf32_Phdr *phdr);
-void			swap_shdr		(Elf32_Shdr *shdr);
-void			swap_stab		(Elf32_Sym  *sym );
-
 int				need_swap		= 0;
 ulong_t			elf_start		= 0;	/* Start offset of current ELF file                             */
 
