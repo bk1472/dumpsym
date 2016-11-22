@@ -104,9 +104,9 @@ typedef struct Elf_Scn	Elf_Scn;
 typedef struct {
 	char				*ar_name;
 	time_t				ar_date;
-	long				ar_uid;
-	long 				ar_gid;
-	unsigned long		ar_mode;
+	int 				ar_uid;
+	int  				ar_gid;
+	unsigned int 		ar_mode;
 	off_t				ar_size;
 	char 				*ar_rawname;
 } Elf_Arhdr;
@@ -118,7 +118,7 @@ typedef struct {
 typedef struct {
 	char				*as_name;
 	size_t				as_off;
-	unsigned long		as_hash;
+	unsigned int 		as_hash;
 } Elf_Arsym;
 
 
@@ -160,7 +160,7 @@ char	  		*elf_getident		_((Elf *, size_t *));
 Elf32_Phdr		*elf32_getphdr		_((Elf *));
 Elf_Scn	  		*elf_getscn			_((Elf *elf, size_t));
 Elf32_Shdr		*elf32_getshdr		_((Elf_Scn *));
-unsigned long	elf_hash			_((const char *));
+unsigned int 	elf_hash			_((const char *));
 Elf_Kind		elf_kind			_((Elf *));
 Elf				*elf_memory			_((char *, size_t));
 size_t			elf_ndxscn			_((Elf_Scn *));

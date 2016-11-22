@@ -57,7 +57,7 @@ DWARF2_External_LineInfo;
 
 typedef struct
 {
-  unsigned long  li_length;
+  unsigned int   li_length;
   unsigned short li_version;
   unsigned int   li_prologue_length;
   unsigned char  li_min_insn_length;
@@ -80,10 +80,10 @@ DWARF2_External_PubNames;
 
 typedef struct
 {
-  unsigned long  pn_length;
+  unsigned int   pn_length;
   unsigned short pn_version;
-  unsigned long  pn_offset;
-  unsigned long  pn_size;
+  unsigned int   pn_offset;
+  unsigned int   pn_size;
 }
 DWARF2_Internal_PubNames;
 
@@ -99,9 +99,9 @@ DWARF2_External_CompUnit;
 
 typedef struct
 {
-  unsigned long  cu_length;
+  unsigned int   cu_length;
   unsigned short cu_version;
-  unsigned long  cu_abbrev_offset;
+  unsigned int   cu_abbrev_offset;
   unsigned char  cu_pointer_size;
 }
 DWARF2_Internal_CompUnit;
@@ -118,9 +118,9 @@ DWARF2_External_ARange;
 
 typedef struct
 {
-  unsigned long  ar_length;
+  unsigned int   ar_length;
   unsigned short ar_version;
-  unsigned long  ar_info_offset;
+  unsigned int   ar_info_offset;
   unsigned char  ar_pointer_size;
   unsigned char  ar_segment_size;
 }

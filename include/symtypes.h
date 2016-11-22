@@ -17,19 +17,19 @@ extern "C" {
 typedef	unsigned char	uchar_t;
 typedef	unsigned short	ushort_t;
 typedef	unsigned int	uint_t;
-typedef	unsigned long	ulong_t;
+typedef	unsigned int 	ulong_t;
 
 typedef unsigned char	UINT08;
 typedef unsigned short	UINT16;
-typedef unsigned long	UINT32;
+typedef unsigned int 	UINT32;
 
 typedef char			SINT08;
 typedef short			SINT16;
-typedef long			SINT32;
+typedef int 			SINT32;
 
 typedef unsigned char	UCHAR;
 typedef unsigned short	USHORT;
-typedef unsigned long	ULONG;
+typedef unsigned int 	ULONG;
 #ifdef __cplusplus
 }
 #endif

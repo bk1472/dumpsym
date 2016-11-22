@@ -86,7 +86,7 @@ struct comp_unit
   int stmtlist;
 
   /* The offset into .debug_line of the line number table.  */
-  unsigned long line_offset;
+  unsigned int line_offset;
 
   /* Address size for this unit - from unit header.  */
   unsigned char addr_size;
@@ -96,10 +96,10 @@ struct comp_unit
 
   /* Base address for this unit - from DW_AT_low_pc attribute of
      DW_TAG_compile_unit DIE */
-  unsigned long base_address;
+  unsigned int base_address;
 
   /* End address for this unit */
-  unsigned long end_address;
+  unsigned int end_address;
 };
 
 /* This data structure holds the information of an abbrev.  */
@@ -546,7 +546,7 @@ read_attribute (struct attribute *attr,
 
 static struct comp_unit *
 parse_comp_unit (unsigned char *info_ptr,
-		 unsigned long unit_length,
+		 unsigned int unit_length,
 		 unsigned int offset_size)
 {
   struct comp_unit* unit;
@@ -558,8 +558,8 @@ parse_comp_unit (unsigned char *info_ptr,
   struct abbrev_info *abbrev;
   struct attribute attr;
   size_t amt;
-  unsigned long low_pc = 0;
-  unsigned long high_pc = 0;
+  unsigned int low_pc = 0;
+  unsigned int high_pc = 0;
 
   version = read_2_bytes (info_ptr);
   info_ptr += 2;
@@ -664,7 +664,7 @@ struct comp_unit cu_head;
 void parse_all_comp_units(void)
 {
   unsigned char *info_ptr = pDebugInfo;
-  unsigned long unit_length;
+  unsigned int unit_length;
   struct comp_unit *curr, *unit;
 
   curr = &cu_head;
@@ -691,7 +691,7 @@ void parse_all_comp_units(void)
 
 /* Find compile director of compilation unit having given line offset */
 char *
-find_comp_dir(unsigned long line_offset)
+find_comp_dir(unsigned int line_offset)
 {
   struct comp_unit *unit;
   unit = cu_head.next_unit;

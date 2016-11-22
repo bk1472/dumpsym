@@ -19,7 +19,7 @@
 #undef	PRINT
 
 #ifdef	CHECK_READELF_OUTPUT
-extern unsigned long	verbose;
+extern unsigned int		verbose;
 #define	PRINT(x...)		if (verbose == 2) { printf(x); fflush(stdout); }
 #else
 #define	PRINT(x...)
@@ -30,7 +30,7 @@ extern unsigned long	verbose;
 extern int need_swap;
 #endif
 
-extern char *find_comp_dir(unsigned long);
+extern char *find_comp_dir(unsigned int);
 
 #else
 
@@ -194,7 +194,7 @@ static char * _basename (const char *name)
 #ifdef	MKSYM
 int compare_line_info(const void *a, const void *b)
 {
-	int *ia = (int *)a, *ib = (int *)b;
+	unsigned int *ia = (unsigned int *)a, *ib = (unsigned int *)b;
 
 	return( ( (ia[0] > ib[0]) ? 1 : ((ia[0] == ib[0]) ? 0 : -1) ) );
 }
@@ -295,7 +295,7 @@ static char * concat_filename (char *comp_dir, char *dirList[], int dir, char *f
 
 int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, char **ppFileName)
 {
-	unsigned long	length;				/* Copy of Dwarf line info header */
+	unsigned int	length;				/* Copy of Dwarf line info header */
 	unsigned short	version;			/* Copy of Dwarf line info header */
 	unsigned int	prologue_length;	/* Copy of Dwarf line info header */
 	unsigned char	insn_min;			/* Copy of Dwarf line info header */
@@ -321,7 +321,7 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 	unsigned int	address = 0;		/* Current address */
 	unsigned int	low_pc;				/* lowest address in current packet */
 	unsigned int	high_pc;			/* lowest address in current packet */
-	unsigned long	curr_offset = 0;	/* Current offset in input dwarf packet */
+	unsigned int	curr_offset = 0;	/* Current offset in input dwarf packet */
 	unsigned int	lineNo, prevNo = 1;	/* Line number and previous line number */
 	unsigned int	fileNo, newFno;		/* File number and new file number */
 	int				bEos = 0, nAddedPkt = 0, bNewPc = 0, bAdded = 0;

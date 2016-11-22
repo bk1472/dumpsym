@@ -25,7 +25,7 @@ uchar_t			*pBinBuff          = NULL;
 
 ulong_t			sym_hash			[MAX_SYM_COUNT];
 char			pSym_buff			[MAX_SYM_BUFF];
-long			sym_tabs			[MAX_SYM_COUNT][3];
+int				sym_tabs			[MAX_SYM_COUNT][3];
 
 int				nTxtSyms			= 0;
 int				nSbSize 			= 0;
@@ -37,7 +37,7 @@ static void		process_phdr		(Elf32_Phdr *pPhdr, Elf32_Half num);
 
 int compare_sym(const void *a, const void *b)
 {
-	int *ia = (int *)a, *ib = (int *)b;
+	unsigned int *ia = (unsigned int *)a, *ib = (unsigned int *)b;
 
 	return( ( (ia[0] > ib[0]) ? 1 : ((ia[0] == ib[0]) ? 0 : -1) ) );
 }
@@ -396,7 +396,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 			fprintf(stderr, "++++ Dumping text symbols\n");
 			for (n = 0; n < nTxtSyms; n++)
 			{
-				long	*pTab = &sym_tabs[n][0];
+				int	*pTab = &sym_tabs[n][0];
 
 				fprintf(stderr, "%08x %08x T %s\n", pTab[0], pTab[1], &pSym_buff[pTab[2]]);
 			}
@@ -415,7 +415,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 		for (n = 0; n < nTxtSyms; n++)
 			sym_hash[n] = n;
 
-		qsort(&sym_hash[0], nTxtSyms, sizeof(long), compare_str);
+		qsort(&sym_hash[0], nTxtSyms, sizeof(int), compare_str);
 
 		#if	(DEBUG > 0)
 		if(debug_lvl_pc > 1)
@@ -424,7 +424,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 			for (n = 0; n < nTxtSyms; n++)
 			{
 				ulong_t v = sym_hash[n];
-				long  *pTab = &sym_tabs[v][0];
+				int  *pTab = &sym_tabs[v][0];
 
 				fprintf(stderr, "%d:: symbol %04x %04x %04x %04x %s\n", n, v,
 								pTab[0], pTab[1], pTab[2], &pSym_buff[pTab[2]]);
@@ -474,7 +474,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 			parse_all_comp_units();
 
 			/* Build debug_line table */
-			searchLineInfo(&pDebugLine, &debugLineSize, (unsigned int)-1, NULL);
+			searchLineInfo(&pDebugLine, (size_t*)&debugLineSize, (unsigned int)-1, NULL);
 			//testAddr2Line(ehdr->e_entry);
 
 			/* Release debug_info table */
@@ -489,7 +489,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 		}
 
 		/* hash table 이 32bit 가 되면서 size가 2에서 4로 바뀜 */
-		sortTableSize	= 4 + sizeof(long) * ((nTxtSyms + 1) & ~1);
+		sortTableSize	= 4 + sizeof(int) * ((nTxtSyms + 1) & ~1);
 		dwarfTableSize	= (nDwarfLst ? (12 + 8 * nDwarfLst + debugLineSize) : 0);
 		tableSize = sortTableSize + dwarfTableSize;
 
@@ -545,7 +545,7 @@ ulong_t process (FILE *ifp, FILE *ofp)
 			for (n = 0; n < nTxtSyms; n++)
 			{
 				ulong_t v = sym_hash[n];
-				long *pTab;
+				int *pTab;
 
 				swap_long(&v);
 				pTab = &sym_tabs[v][0];
