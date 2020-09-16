@@ -57,14 +57,16 @@ DWARF2_External_LineInfo;
 
 typedef struct
 {
-  unsigned int   li_length;
+  unsigned long  li_length;
   unsigned short li_version;
-  unsigned int   li_prologue_length;
+  unsigned long  li_prologue_length;
   unsigned char  li_min_insn_length;
+  unsigned char  li_max_ops_per_insn;
   unsigned char  li_default_is_stmt;
   int            li_line_base;
   unsigned char  li_line_range;
   unsigned char  li_opcode_base;
+  unsigned char  *standard_opcode_len;
 }
 DWARF2_Internal_LineInfo;
 

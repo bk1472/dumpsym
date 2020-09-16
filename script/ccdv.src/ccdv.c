@@ -78,7 +78,7 @@ static void DumpFormattedOutput(void)
 					*cp = '.';
 				cp++;
 			}
-			printf("%*.*s", len, len, gBuf);
+			printf("%*.*s", (int)len, (int)len, gBuf);
 		}
 		if (siftWarnMain(cmdName, gBuf+strlen(gArgsStr)) != 0)
 			gExitStatus = 90;
@@ -176,10 +176,10 @@ static void SlurpTitle(char *s1, size_t len, char *tail)
 			if (cp == NULL) cp = gTarget + len;
 			else            len = cp - gTarget;
 
-			if      (gCcOpt == 1) snprintf(gOutput, sizeof(gOutput), "%*.*s.o", len, len, gTarget);
-			else if (gCcOpt == 2) snprintf(gOutput, sizeof(gOutput), "%*.*s.i", len, len, gTarget);
-			else if (gCcOpt == 3) snprintf(gOutput, sizeof(gOutput), "%*.*s.s", len, len, gTarget);
-			else                  snprintf(gOutput, sizeof(gOutput), "%*.*s",   len, len, gTarget);
+			if      (gCcOpt == 1) snprintf(gOutput, sizeof(gOutput), "%*.*s.o", (int)len, (int)len, gTarget);
+			else if (gCcOpt == 2) snprintf(gOutput, sizeof(gOutput), "%*.*s.i", (int)len, (int)len, gTarget);
+			else if (gCcOpt == 3) snprintf(gOutput, sizeof(gOutput), "%*.*s.s", (int)len, (int)len, gTarget);
+			else                  snprintf(gOutput, sizeof(gOutput), "%*.*s",   (int)len, (int)len, gTarget);
 
 			cp = strrchr(gPathname, '.');
 			if (cp == NULL) cp = &gPathname[strlen(gPathname)];

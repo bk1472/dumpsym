@@ -10,7 +10,7 @@ extern "C" {
 #include	<ar.h>
 #include	"symtypes.h"
 
-extern ulong_t		process		(FILE *ifp, FILE *ofp);
+extern ulong_t		process			(FILE *ifp, FILE *ofp);
 
 #ifdef __cplusplus
 }

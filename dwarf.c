@@ -30,14 +30,19 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
-#include "stdlib.h"
-#include "stdio.h"
-#include "string.h"
-#include "malloc.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <malloc.h>
+
+#include "def.h"
 #include "dwarf.h"
 
-unsigned char *pDebugStr = NULL, *pDebugInfo = NULL, *pDebugAbbr = NULL;
-size_t debugStrSize, debugInfoSize, debugAbbrSize;
+extern int	debug_lvl_pc;
+
+unsigned char	*pDebugStr = NULL, *pDebugInfo = NULL, *pDebugAbbr = NULL;
+size_t		debugStrSize, debugInfoSize, debugAbbrSize;
 
 /* Attributes have a name and a value.  */
 
@@ -49,8 +54,8 @@ struct attribute
   {
     char *str;
     struct dwarf_block *blk;
-    unsigned int val;
-    signed int sval;
+    uint64_t val;
+    int64_t sval;
   }
   u;
 };
@@ -69,6 +74,8 @@ struct comp_unit
 {
   /* Chain the previously read compilation units.  */
   struct comp_unit *next_unit;
+  struct comp_unit *prev_unit;
+
 
   /* The DW_AT_name attribute (for error messages).  */
   char *name;
@@ -86,7 +93,7 @@ struct comp_unit
   int stmtlist;
 
   /* The offset into .debug_line of the line number table.  */
-  unsigned int line_offset;
+  unsigned long line_offset;
 
   /* Address size for this unit - from unit header.  */
   unsigned char addr_size;
@@ -96,10 +103,10 @@ struct comp_unit
 
   /* Base address for this unit - from DW_AT_low_pc attribute of
      DW_TAG_compile_unit DIE */
-  unsigned int base_address;
+  uint64_t base_address;
 
   /* End address for this unit */
-  unsigned int end_address;
+  uint64_t end_address;
 };
 
 /* This data structure holds the information of an abbrev.  */
@@ -156,6 +163,13 @@ read_4_bytes (unsigned char *buf)
 {
   extern int getLong(char *pSrc);
   return (getLong(buf));
+}
+
+static uint64_t
+read_8_bytes (unsigned char *buf)
+{
+  extern int64_t getLLong(char *pSrc);
+  return (getLLong(buf));
 }
 
 #if 0
@@ -248,11 +262,13 @@ read_indirect_string (struct comp_unit* unit, unsigned char *buf, unsigned int *
 
 /* END VERBATIM */
 
-static unsigned int
+static unsigned long long
 read_address (struct comp_unit *unit, unsigned char *buf)
 {
   switch (unit->addr_size)
     {
+    case 8:
+      return read_8_bytes (buf);
     case 4:
       return read_4_bytes (buf);
     case 2:
@@ -443,6 +459,10 @@ read_attribute_value (struct attribute *attr,
       info_ptr += 4;
       break;
       break;
+    case DW_FORM_data8:
+      attr->u.val = read_8_bytes (info_ptr);
+      info_ptr += 8;
+      break;
     case DW_FORM_string:
       attr->u.str = read_string (info_ptr, &bytes_read);
       info_ptr += bytes_read;
@@ -558,8 +578,8 @@ parse_comp_unit (unsigned char *info_ptr,
   struct abbrev_info *abbrev;
   struct attribute attr;
   size_t amt;
-  unsigned int low_pc = 0;
-  unsigned int high_pc = 0;
+  unsigned long low_pc = 0;
+  unsigned long high_pc = 0;
 
   version = read_2_bytes (info_ptr);
   info_ptr += 2;
@@ -663,22 +683,50 @@ struct comp_unit cu_head;
 /* Parse all compile units */
 void parse_all_comp_units(void)
 {
-  unsigned char *info_ptr = pDebugInfo;
-  unsigned int unit_length;
-  struct comp_unit *curr, *unit;
+  unsigned char*	info_ptr = pDebugInfo;
+  uint64_t		unit_length;
+  struct comp_unit	*curr, *unit;
 
   curr = &cu_head;
   curr->next_unit = NULL;
 
   while (info_ptr < (pDebugInfo + debugInfoSize))
   {
-    unit_length = read_4_bytes (info_ptr); info_ptr += 4;
+    unsigned int addr_size = 8;
+    unsigned int offs_size = 8;
 
-    unit = parse_comp_unit (info_ptr, unit_length, 4);
+    unit_length = read_4_bytes (info_ptr);
 
-    #if 0
-    printf("[0x%08x..0x%08x] 0x%06x, %s, %s\n", unit->base_address, unit->end_address,
-				unit->line_offset, unit->comp_dir, unit->name);
+    if (unit_length == 0xffffffff)
+    {
+	offs_size = 8;
+	unit_length = read_8_bytes(info_ptr+4);
+    	info_ptr += 12;
+    }
+    else if (unit_length == 0)
+    {
+	offs_size = 8;
+	unit_length = read_4_bytes(info_ptr+4);
+    	info_ptr += 8;
+    }
+    else if (addr_size == 8)
+    {
+	offs_size = 4;
+    	info_ptr += 4;
+    }
+    else
+    {
+    	info_ptr += 4;
+    }
+
+    unit = parse_comp_unit (info_ptr, unit_length, offs_size);
+
+    #if	(DEBUG > 2)
+    if(debug_lvl_pc > 1)
+    {
+    	printf("[0x%016lx..0x%016lx] 0x%08x, %s,  %s\n", unit->base_address, unit->end_address,
+						unit->line_offset, unit->comp_dir, unit->name);
+    }
     #endif
 
     curr->next_unit = unit;
@@ -691,7 +739,7 @@ void parse_all_comp_units(void)
 
 /* Find compile director of compilation unit having given line offset */
 char *
-find_comp_dir(unsigned int line_offset)
+find_comp_dir(unsigned long line_offset)
 {
   struct comp_unit *unit;
   unit = cu_head.next_unit;

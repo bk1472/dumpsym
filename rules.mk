@@ -1,5 +1,5 @@
 $(OBJ_DIR)/%.o : %.c
-	@$(CCDV) $(CC) $(CFLAGS) -o $@ -c $<
+	@$(CCDV) $(CC) $(CFLAGS) $(HOST_RULE) -o $@ -c $<
 
 $(OBJ_DIR)/%.d : %.c
 	@test -d $(OBJ_DIR) || mkdir -p $(OBJ_DIR)

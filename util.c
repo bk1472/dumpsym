@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -10,16 +11,27 @@
 
 static	int	err_code = 0;
 
+#define BIT_64	64
+#define BIT_32	32
+
 static void hexdump_fp(FILE *fp, const char *name, void *vcp, int size)
 {
-	static UCHAR n2h[] = "0123456789abcdef";
+	#if    (BIT_WIDTH == BIT_64)
+	 #define HPOS_INIT		26
+	 #define CPOS_OFFS		64
+	 #define PRNTMSG		"\t0x%016lx(%04x):"
+	#elif  (BIT_WIDTH == BIT_32)
+	 #define HPOS_INIT		18
+	 #define CPOS_OFFS		56
+	 #define PRNTMSG		"\t0x%08x(%04x):"
+	#endif
+
+	static uint8_t n2h[] = "0123456789abcdef";
 	int		i, hpos, cpos;
 	char	buf[GHD_BUFSZ+1] = {0};
-	UCHAR	*cp, uc;
-	volatile ULONG	*lp, word_buff[4];
-	ULONG	crc_val = 0;
+	uint8_t	*cp, uc;
 
-	snprintf(buf, GHD_BUFSZ, "%s(Size=0x%x, CRC32=0x%08x)", name, size, crc_val);
+	snprintf(buf, GHD_BUFSZ, "%s(Size=0x%x)", name, size);
 	buf[GHD_BUFSZ] = 0;
 	fprintf(fp,"%s\n",buf);
 
@@ -27,13 +39,13 @@ static void hexdump_fp(FILE *fp, const char *name, void *vcp, int size)
 
 	memset(buf, ' ', GHD_BUFSZ);
 
-	cp = (UCHAR*)vcp;
+	cp = (uint8_t*)vcp;
 	hpos = cpos = 0;
 	for (i=0; i < size; ) {
 
 		if ((i % 16) == 0) {
-			snprintf(buf, GHD_BUFSZ, "\t0x%08x(%04x):", (int)vcp+i, i);
-			hpos = 18;
+			snprintf(buf, GHD_BUFSZ, PRNTMSG, (long)vcp+i, i);
+			hpos = HPOS_INIT;
 		}
 
 		if ((i % 4)  == 0) buf[hpos++] = ' ';
@@ -43,7 +55,7 @@ static void hexdump_fp(FILE *fp, const char *name, void *vcp, int size)
 		if ((i+2)<size) {uc=cp[i+2]; buf[hpos++]=n2h[(uc&0xF0)>>4];buf[hpos++]=n2h[uc&15];}
 		if ((i+3)<size) {uc=cp[i+3]; buf[hpos++]=n2h[(uc&0xF0)>>4];buf[hpos++]=n2h[uc&15];}
 
-		cpos = (i%16) + 56;
+		cpos = (i%16) + CPOS_OFFS;
 
 		if (i<size) {buf[cpos++] = (isprint(cp[i]) ? cp[i] : '.'); i++;}
 		if (i<size) {buf[cpos++] = (isprint(cp[i]) ? cp[i] : '.'); i++;}
@@ -57,7 +69,7 @@ static void hexdump_fp(FILE *fp, const char *name, void *vcp, int size)
 	}
 	buf[cpos] = 0x00;
 	if ((i%16) != 0) {
-		for ( ; hpos < 56; hpos++)
+		for ( ; hpos < CPOS_OFFS; hpos++)
 			buf[hpos] = ' ';
 		fprintf(fp,"%s\n", buf);
 	}

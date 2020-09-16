@@ -1,42 +1,71 @@
-/*
- *	This file will be used in
- *		1) mkbiz command
- *			Build .debug_line index table and shrink the .debug_line section
- *		2) Stack tracer in target board
- *			Change the pc to filename:line_number pair to ease to debug
+/******************************************************************************
+ *	 ROBOT LABORATORY, LG ELECTRONICS INC., SEOUL, KOREA
+ *	 Copyright(c) 2018 by LG Electronics Inc.
+ *
+ *	 All rights reserved. No part of this work may be reproduced, stored in a
+ *	 retrieval system, or transmitted by any means without prior written
+ *	 permission of LG Electronics Inc.
+ *****************************************************************************/
+
+/** addr2line.c
+ *
+ *	symbol address line libraries
+ *
+ *	@author		Baekwon Choi (baekwon.choi@lge.com)
+ *	@version    1.0
+ *	@date       2018. 3. 29
+ *	@note
+ *	@see
  */
+
+/*-----------------------------------------------------------------------------
+ *	Control Constants
+------------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------------------
+ *	#include Files
+------------------------------------------------------------------------------*/
 #ifdef	MKSYM
+#include	<stdio.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<stdint.h>
+#include	"symtypes.h"
+#include	"util.h"
+#include	"dwarf.h"
+#include	"def.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "symtypes.h"
-#include "def.h"
+#else	/*!MKSYM*/
 
-#define	tprint0n		printf
+#include	"symbol.h"
 
+#endif	/*MKSYM*/
+
+/*-----------------------------------------------------------------------------
+ *	Constant Definitions
+------------------------------------------------------------------------------*/
+#define	NUM_FILES		1024
+#define	NUM_DIRS		1024
+
+/*-----------------------------------------------------------------------------
+ *	Macro Definitions
+------------------------------------------------------------------------------*/
+#ifdef	MKSYM
+#define tprint0n		printf
 #define	CHECK_READELF_OUTPUT
 #undef	PRINT
-
 #ifdef	CHECK_READELF_OUTPUT
 extern unsigned int		verbose;
 #define	PRINT(x...)		if (verbose == 2) { printf(x); fflush(stdout); }
 #else
 #define	PRINT(x...)
 #endif
-
 #define	CHECK_ENDIAN
 #ifdef	CHECK_ENDIAN
 extern int need_swap;
 #endif
-
-extern char *find_comp_dir(unsigned int);
-
-#else
-
-#include "stbos.h"
-#include "dbgprint.h"
-
+extern char *find_comp_dir(unsigned long);
+#else	/*!MKSYM*/
 #undef	CHECK_READELF_OUTPUT
 #undef	PRINT
 
@@ -45,11 +74,17 @@ extern char *find_comp_dir(unsigned int);
 #else
 #define	PRINT(x...)
 #endif
+#endif	/*MKSYM*/
 
-#endif	/* MKSYM */
 
-#include "dwarf.h"
 
+/*-----------------------------------------------------------------------------
+ *	Type Definitions
+------------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------------------
+ *	External Variables & Function prototypes declarations
+------------------------------------------------------------------------------*/
 
 /*
  *	CHECK_READELF_OUTPUT
@@ -59,24 +94,33 @@ extern char *find_comp_dir(unsigned int);
  *		  # diff out.readelf out.mkbiz
  */
 
-#if (DEBUG > 0)
-extern int debug_lvl_ad;
-#endif
-
 #ifdef	MKSYM
-unsigned int	dwarfTbl[3*MAX_DWARF_PKT];	/* Sort table for Dwarf				*/
-unsigned int	dwarfLst[2*MAX_DWARF_PKT];	/* Pointer to dwarf packet			*/
-unsigned int	nDwarfLst = 0;				/* Number of dwarf packets			*/
-#else
-unsigned int	*dwarfLst = 0;				/* Pointer to dwarf packet			*/
-unsigned int	nDwarfLst = 0;				/* Number of dwarf packets			*/
-#endif	/* MKSYM */
+ #if (DEBUG > 0)
+ extern int debug_lvl_ad;
+ #endif
+#endif	/*MKSYM*/
+
+/*-----------------------------------------------------------------------------
+ *	Global Variables declarations
+------------------------------------------------------------------------------*/
+#ifdef	MKSYM
+uint64_t		dwarfTbl[3*MAX_DWARF_PKT];	/* Sort table for Dwarf	          */
+uint64_t		dwarfLst[2*MAX_DWARF_PKT];	/* Pointer to dwarf packet        */
+#else	/*!MKSYM*/
+uint64_t		*dwarfLst = NULL;			/* Pointer to dwarf packet        */
+#endif	/*MKSYM*/
+uint64_t		nDwarfLst = 0;				/* Number of dwarf packets        */
 unsigned char 	*pDwarfData = 0;
 unsigned int	bFullPath = 1;
 
-#define	NUM_FILES		512
-#define	NUM_DIRS		512
 
+/*-----------------------------------------------------------------------------
+ *	Static Variables & Function prototypes declarations
+------------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------------------
+ *	Static Function Definition
+------------------------------------------------------------------------------*/
 #ifndef	MKSYM
 static
 #endif /* MKSYM */
@@ -125,6 +169,43 @@ int getLong(char *pSrc)
 		pDst[1] = pSrc[1];
 		pDst[2] = pSrc[2];
 		pDst[3] = pSrc[3];
+	#ifdef	CHECK_ENDIAN
+	}
+	#endif
+	return(data);
+}
+
+#ifndef	MKSYM
+static
+#endif /* MKSYM */
+int64_t getLLong(char *pSrc)
+{
+	int64_t	data;
+	char *pDst = (char *)&data;
+
+	#ifdef	CHECK_ENDIAN
+	if (need_swap)
+	{
+		pDst[0] = pSrc[7];
+		pDst[1] = pSrc[6];
+		pDst[2] = pSrc[5];
+		pDst[3] = pSrc[4];
+		pDst[4] = pSrc[3];
+		pDst[5] = pSrc[2];
+		pDst[6] = pSrc[1];
+		pDst[7] = pSrc[0];
+	}
+	else
+	{
+	#endif
+		pDst[0] = pSrc[0];
+		pDst[1] = pSrc[1];
+		pDst[2] = pSrc[2];
+		pDst[3] = pSrc[3];
+		pDst[4] = pSrc[4];
+		pDst[5] = pSrc[5];
+		pDst[6] = pSrc[6];
+		pDst[7] = pSrc[7];
 	#ifdef	CHECK_ENDIAN
 	}
 	#endif
@@ -191,10 +272,13 @@ static char * _basename (const char *name)
   return (char *) base;
 }
 
+/*-----------------------------------------------------------------------------
+ *	Global Function Definition
+------------------------------------------------------------------------------*/
 #ifdef	MKSYM
 int compare_line_info(const void *a, const void *b)
 {
-	unsigned int *ia = (unsigned int *)a, *ib = (unsigned int *)b;
+	uint64_t *ia = (uint64_t *)a, *ib = (uint64_t *)b;
 
 	return( ( (ia[0] > ib[0]) ? 1 : ((ia[0] == ib[0]) ? 0 : -1) ) );
 }
@@ -293,17 +377,13 @@ static char * concat_filename (char *comp_dir, char *dirList[], int dir, char *f
 }
 #endif /* MKSYM */
 
-int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, char **ppFileName)
+/*-----------------------------------------------------------------------------
+ *	API Function Definition
+------------------------------------------------------------------------------*/
+#define LineInfo_t DWARF2_Internal_LineInfo
+int searchLineInfo(char **ppDebugLine, uint64_t *pSize, uint64_t srchAddr, char **ppFileName)
 {
-	unsigned int	length;				/* Copy of Dwarf line info header */
-	unsigned short	version;			/* Copy of Dwarf line info header */
-	unsigned int	prologue_length;	/* Copy of Dwarf line info header */
-	unsigned char	insn_min;			/* Copy of Dwarf line info header */
-	unsigned char	default_is_stmt;	/* Copy of Dwarf line info header */
-	int				line_base;			/* Copy of Dwarf line info header */
-	unsigned char	line_range;			/* Copy of Dwarf line info header */
-	unsigned char	opcode_base;		/* Copy of Dwarf line info header */
-	unsigned int	ptr_size;			/* Size of pointer, fixed to 4 */
+	LineInfo_t		Linfo;
 
 	int				i;
 	char			*cp;
@@ -318,10 +398,10 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 	char			*opcodeLen; 		/* Standard opcode length */
 	#endif
 	unsigned char	opcode;				/* current opcode */
-	unsigned int	address = 0;		/* Current address */
-	unsigned int	low_pc;				/* lowest address in current packet */
-	unsigned int	high_pc;			/* lowest address in current packet */
-	unsigned int	curr_offset = 0;	/* Current offset in input dwarf packet */
+	uint64_t		address = 0;		/* Current address */
+	uint64_t		low_pc;				/* lowest address in current packet */
+	uint64_t		high_pc;			/* lowest address in current packet */
+	unsigned long	curr_offset = 0;	/* Current offset in input dwarf packet */
 	unsigned int	lineNo, prevNo = 1;	/* Line number and previous line number */
 	unsigned int	fileNo, newFno;		/* File number and new file number */
 	int				bEos = 0, nAddedPkt = 0, bNewPc = 0, bAdded = 0;
@@ -339,7 +419,7 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 
 	#if (DEBUG > 0)
 	if(debug_lvl_ad > 0)
-		tprint0n("searchLineInfo(0x%x, %d, 0x%x, 0x%x)\n", *ppDebugLine, *pSize, srchAddr, ppFileName);
+		tprint0n("searchLineInfo(0x%x, %d, 0x%lx, 0x%x)\n", *ppDebugLine, *pSize, srchAddr, ppFileName);
 	#endif
 
 	#ifdef MKSYM
@@ -354,40 +434,74 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 	PRINT("Dump of debug contents of section .debug_line:\n");
 	PRINT("\n");
 
-	cp = *ppDebugLine;
+	cp        = *ppDebugLine;
 	secEndPtr = *ppDebugLine + *pSize;
 
-	/*
-	 *	Support 32bit format only
-	 */
 	while (cp < secEndPtr)
 	{
-		dwarfStart		= cp;
-		ptr_size		= 4;
-		length			= getLong(cp);  cp += 4;
-		pLineEnd		= cp + length;
-		version			= getShort(cp); cp += 2;
-		prologue_length	= getLong(cp);  cp += 4;
-		insn_min		= (unsigned char)(*cp++);
-		default_is_stmt	= (unsigned char)(*cp++);
-		line_base		= (signed   char)(*cp++);
-		line_range		= (unsigned char)(*cp++);
-		opcode_base		= (unsigned char)(*cp++);
+		unsigned int offs_size;
+		unsigned int addr_size = sizeof(long);
+		dwarfStart					= cp;
+
+		Linfo.li_length				= getLong(cp); cp += 4;
+		offs_size                   = 4;
+		if(Linfo.li_length == 0xffffffff)
+		{
+			Linfo.li_length	= getLLong(cp); cp += 8;
+			offs_size       = 8;
+		}
+		else if (Linfo.li_length == 0 && addr_size == 8)
+		{
+			Linfo.li_length	= getLong(cp); cp += 4;
+			offs_size       = 8;
+		}
+		pLineEnd					= cp + Linfo.li_length;
+
+		Linfo.li_version			= getShort(cp);
+		if(Linfo.li_version < 2 || Linfo.li_version > 4)
+			break;
+		cp += 2;
+
+		if(offs_size == 4)
+		{
+			Linfo.li_prologue_length	= getLong(cp);
+		}
+		else
+		{
+			Linfo.li_prologue_length	= getLLong(cp);
+		}
+		cp += offs_size;
+
+		if (Linfo.li_version >= 4)
+		{
+			Linfo.li_max_ops_per_insn = (unsigned char)(*cp++);
+		}
+		else
+		{
+			Linfo.li_max_ops_per_insn = 1;
+		}
+		if(Linfo.li_prologue_length == 0)
+			break;
+
+		Linfo.li_min_insn_length	= (unsigned char)(*cp++);
+		Linfo.li_default_is_stmt	= (unsigned char)(*cp++);
+		Linfo.li_line_base      	= (signed   char)(*cp++);
+		Linfo.li_line_range     	= (unsigned char)(*cp++);
+		Linfo.li_opcode_base    	= (unsigned char)(*cp++);
 
 		#if	0
 		hexdump("DwarfPacket", dwarfStart, 0x100);
 		hexdump("DwarfPacket", pLineEnd,   0x100);
 		#endif
 
-		PRINT("  Length:                      %u\n", length);
-		PRINT("  DWARF Version:               %u\n", version);
-		PRINT("  Prologue Length:             %u\n", prologue_length);
-		PRINT("  Minimum Instruction Length:  %u\n", insn_min);
-		PRINT("  Initial value of 'is_stmt':  %u\n", default_is_stmt);
-		PRINT("  Line Base:                   %d\n", line_base);
-		PRINT("  Line Range:                  %u\n", line_range);
-		PRINT("  Opcode Base:                 %u\n", opcode_base);
-		PRINT("  (Pointer size:               %u)\n", ptr_size);
+		PRINT("  Length:                      %u\n",Linfo.li_length);
+		PRINT("  DWARF Version:               %u\n",Linfo.li_version);
+		PRINT("  Prologue Length:             %u\n",Linfo.li_prologue_length);
+		PRINT("  Minimum Instruction Length:  %u\n",Linfo.li_min_insn_length);
+		PRINT("  Initial value of 'is_stmt':  %u\n",Linfo.li_default_is_stmt);
+		PRINT("  Line Base:                   %d\n",Linfo.li_line_base);
+		PRINT("  Line Range:                  %u\n",Linfo.li_line_range);
+		PRINT("  Opcode Base:                 %u\n",Linfo.li_opcode_base);
 
 		#ifdef	MKSYM
 		for (i = 0; i < NUM_FILES; i++)
@@ -401,10 +515,10 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 			opcodeLen = cp - 1;
 			PRINT("\n");
 			PRINT(" Opcodes:\n");
-			for (i = 1; i < opcode_base; i++)
+			for (i = 1; i < Linfo.li_opcode_base; i++)
 				PRINT("  Opcode %d has %d args\n", i, opcodeLen[i]);
 
-			cp = cp + opcode_base - 1;
+			cp = cp + Linfo.li_opcode_base - 1;
 			PRINT("\n");
 
 			comp_dir = find_comp_dir(curr_offset);
@@ -432,7 +546,6 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 			cp++;
 		}
 		#endif /* MKSYM */
-
 		PRINT("\n");
 		i = numFiles = 0;
 		if (cp[0] == 0x00)
@@ -472,10 +585,10 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 		PRINT("\n");
 		PRINT(" Line Number Statements:\n");
 
-		if (cp >= (dwarfStart + length + 4))
+		if (cp >= (dwarfStart + Linfo.li_length + 4))
 		{
-			if (cp > (dwarfStart + length + 4))
-				PRINT("overrun %x :: %xn\n", cp, dwarfStart + length + 4);
+			if (cp > (dwarfStart + Linfo.li_length + 4))
+				PRINT("overrun %x :: %xn\n", cp, dwarfStart + Linfo.li_length + 4);
 			PRINT("\n");
 		}
 
@@ -496,16 +609,16 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 			bNewPc	= 1;
 			bAdded 	= 0;
 			high_pc = 0;
-			is_stmt = default_is_stmt;
+			is_stmt = Linfo.li_default_is_stmt;
 			basic_block = 1;
 
 			for (i = 0; bEos == 0; i++)
 			{
 				opcode = *cp++;
 
-				if (opcode >= opcode_base)
+				if (opcode >= Linfo.li_opcode_base)
 				{
-					int	addrInc, lineInc;
+					unsigned int	addrInc, lineInc;
 
 					/* Mark valid line_info has been added */
 					bAdded = 1;
@@ -513,10 +626,10 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 					if (bNewPc || (address < low_pc)) { bNewPc = 0; low_pc = address; }
 
 					/* Line and Address increment */
-					opcode	-= opcode_base;
+					opcode	-= Linfo.li_opcode_base;
 
-					lineInc  = line_base + (opcode % line_range);
-					addrInc	 = ((opcode - lineInc + line_base) / line_range) * insn_min;
+					lineInc  = Linfo.li_line_base + (opcode % Linfo.li_line_range);
+					addrInc	 = ((opcode - lineInc + Linfo.li_line_base) / Linfo.li_line_range) * Linfo.li_min_insn_length;
 					lineNo	+= lineInc;
 					address	+= addrInc;
 					PRINT("  Special opcode %d: advance Address by %d to 0x%x and Line by %d to %d\n",
@@ -547,7 +660,7 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 					  case DW_LNS_extended_op : 	 // 0,
 					  {
 						opcode = *cp++; /* Ignore length */
-//						PRINT("  Length = %x\n", opcode);
+						//PRINT("  Length = %x\n", opcode);
 						opcode = *cp++;
 
 						switch (opcode)
@@ -601,10 +714,10 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 						  }
 						  case DW_LNE_set_address :	 // 2,
 						  {
-							address = getLong(cp); cp += 4;
+							address = getLLong(cp); cp += 8;
 							if (bNewPc || (address < low_pc)) { bNewPc = 0; low_pc = address; }
 							if (address > high_pc) high_pc = address;
-					  		PRINT("  Extended opcode %d: set Address to 0x%x\n", opcode, address);
+					  		PRINT("  Extended opcode %d: set Address to 0x%lx\n", opcode, address);
 							break;
 						  }
 						  case DW_LNE_define_file : // 3
@@ -613,13 +726,20 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 							char *name;
 
 							name = cp;
-							cp  += strlen(name) + 1;
+							if (*cp == '\0')
+								cp += 1;
+							else
+								cp  += strlen(name) + 1;
 							ch1  = decodeULEB128(&cp);	/* Dir */
 							ch2  = decodeULEB128(&cp);	/* Time */
 							ch3  = decodeULEB128(&cp);	/* Size */
 							PRINT("  Define file :  %d	%d	%d	%d	%s\n", numFiles, ch1, ch2, ch3, name);
 							if (numFiles < NUM_FILES)
 								fileList[numFiles] = name;
+
+							#if 0
+							hexdump("DW_LNE_define_file", name, 0x80);
+							#endif
 							break;
 						  }
 
@@ -649,9 +769,9 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 					  }
 					  case DW_LNS_advance_pc : 			// 2,
 					  {
-						int	addrInc;
+						unsigned int	addrInc;
 
-						addrInc	 = decodeULEB128(&cp) * insn_min;
+						addrInc	 = decodeULEB128(&cp) * Linfo.li_min_insn_length;
 						address	+= addrInc;
 						PRINT("  Advance PC by %d to %x\n", addrInc, address);
 						if (srchAddr < address)
@@ -706,16 +826,16 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 					  }
 					  case DW_LNS_const_add_pc : 		// 8,
 					  {
-						int	addrInc;
+						unsigned int	addrInc;
 
-						addrInc	 = insn_min * ((255-opcode_base)/line_range);
+						addrInc	 = Linfo.li_min_insn_length * ((255-Linfo.li_opcode_base)/Linfo.li_line_range);
 						address	+= addrInc;
 						PRINT("  Advance PC by constant %d to 0x%x\n", addrInc, address);
 						break;
 					  }
 					  case DW_LNS_fixed_advance_pc :	// 9,
 					  {
-						int	addrInc;
+						unsigned int	addrInc;
 
 						addrInc	 = (unsigned)getShort(cp); cp += 2;
 						address	+= addrInc;
@@ -884,14 +1004,14 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 	#ifdef	MKSYM
 	if (srchAddr == -1)
 	{
-		qsort(&dwarfTbl[0], nDwarfLst, 3 * sizeof(int), compare_line_info);
+		qsort(&dwarfTbl[0], nDwarfLst, 3 * sizeof(uint64_t), compare_line_info);
 
 		#if (DEBUG > 0)
 		if(debug_lvl_ad > 1)
 		{
 			tprint0n("Table Before pack\n");
 			for (i = 0; i < nDwarfLst; i++)
-				tprint0n("== [%3d] vAddr 0x%08x..0x%08x : fOffset 0x%06x\n",
+				tprint0n("== [%3d] vAddr 0x%016lx..0x%016lx : fOffset 0x%06lx\n",
 								i, dwarfTbl[3*i+0], dwarfTbl[3*i+1], dwarfTbl[3*i+2]);
 		}
 		#endif
@@ -909,7 +1029,7 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 		{
 			tprint0n("Table After pack\n");
 			for (i = 0; i < nDwarfLst; i++)
-				tprint0n("== [%3d] vAddr 0x%08x : fOffset 0x%06x\n", i, dwarfLst[2*i+0], dwarfLst[2*i+1]);
+				tprint0n("== [%3d] vAddr 0x%016lx : fOffset 0x%06x\n", i, dwarfLst[2*i+0], dwarfLst[2*i+1]);
 		}
 		#endif
 
@@ -926,9 +1046,9 @@ int searchLineInfo(char **ppDebugLine, size_t *pSize, unsigned int srchAddr, cha
 	#endif /* MKSYM */
 
 	return 0;
-}
+}	/*end of searchLineInfo*/
 
-int addr2line(unsigned int addr, char **ppFileName)
+int addr2line(uint64_t addr, char **ppFileName)
 {
 	int		x, l = 0, r = nDwarfLst-1, matched = 0;
 	int		lineNo = 0;
@@ -947,8 +1067,8 @@ int addr2line(unsigned int addr, char **ppFileName)
 
 	if (matched)
 	{
-		char	*pDwarf = (char *)pDwarfData + dwarfLst[2*x+1];
-		size_t	size	= 4 + getLong(pDwarf);
+		char		*pDwarf = (char *)pDwarfData + dwarfLst[2*x+1];
+		uint64_t	size	= 8 + getLLong(pDwarf);
 
 		#if (DEBUG > 0)
 		if(debug_lvl_ad > 0)
